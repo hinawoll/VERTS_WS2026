@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
   // der Optionen sammeln.
   std::vector<std::string> arguments;
 
-  //Schleife faengt bei 1 an und ignoriert den Programmnamen
+  // Schleife faengt bei 1 an und ignoriert den Programmnamen
   for (int i = 1; i < argc; ++i)
   {
 
@@ -143,20 +143,26 @@ int main(int argc, char *argv[])
   {
 
     int status;
+    pid_t result;
 
-    while (waitpid(child, &status, 0) == -1)
+    // Auf den Kindprozess warten.
+    // Falls waitpid durch ein Signal unterbrochen wird (EINTR),
+    // wird der Aufruf wiederholt.
+    do
     {
+      result = waitpid(child, &status, 0);
+    } while (result == -1 && errno == EINTR);
 
-      if (errno == EINTR)
-      {
-        continue;
-      }
-
+    // Bei einem Fehler zum nächsten Kindprozess wechseln,
+    // da status in diesem Fall nicht gültig ist.
+    if (result == -1)
+    {
       std::cerr << "Fehler bei waitpid\n";
       error = true;
-      break;
+      continue;
     }
 
+    // Prüfen, ob der Kindprozess normal und mit Exit-Code 0 beendet wurde.
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
     {
       error = true;
