@@ -26,7 +26,7 @@ std::string toLower(std::string text)
 }
 
 // Vergleicht zwei Dateinamen.
-// Optional wird Gross-/Kleinschreibung ignoriert.
+// Optional wird Groß-/Kleinschreibung ignoriert.
 bool matches(const std::string &actual,
              const std::string &wanted,
              bool ignoreCase)
@@ -55,24 +55,29 @@ bool printResult(const std::string &filename,
       filename + ": " +
       fs::absolute(path).lexically_normal().string() + "\n";
 
-  // Semaphore sperren.
+  // Die Semaphore sperren, damit nur ein Prozess gleichzeitig schreibt.
   while (sem_wait(outputLock) == -1)
   {
 
     if (errno != EINTR)
     {
+      // Bei einem anderen Fehler kann die Ausgabe nicht sicher erfolgen.
       return false;
     }
+
+    // Bei einer Unterbrechung durch ein Signal wird erneut gewartet.
   }
 
+  // Die Position der nächsten noch nicht geschriebenen Stelle speichern.
   bool success = true;
   size_t offset = 0;
 
-  // Gesamte Zeile schreiben.
+  // Die gesamte Ausgabezeile schreiben.
   // write() kann weniger Bytes als angefordert schreiben.
   while (offset < line.size())
   {
 
+    // Die Ausgabe wird direkt auf das Standardausgabegerät geschrieben.
     ssize_t written = write(
         STDOUT_FILENO,
         line.data() + offset,
@@ -80,21 +85,25 @@ bool printResult(const std::string &filename,
 
     if (written < 0 && errno == EINTR)
     {
+      // Bei einer Signalunterbrechung wird der Schreibvorgang wiederholt.
       continue;
     }
 
     if (written <= 0)
     {
+      // Ein negativer oder leerer Schreibvorgang gilt als Fehler.
       success = false;
       break;
     }
 
+    // Die bereits geschriebene Anzahl wird zur Position addiert.
     offset += static_cast<size_t>(written);
   }
 
-  // Semaphore wieder freigeben.
+  // Die Semaphore wieder freigeben,damit andere Prozesse schreiben können.
   if (sem_post(outputLock) == -1)
   {
+    // Auch ein Fehler beim Freigeben macht die Ausgabe ungültig.
     return false;
   }
 
@@ -114,12 +123,12 @@ bool searchFiles(const std::string &searchPath,
 
     fs::path directory(searchPath);
 
-    // Pruefen, ob das Verzeichnis existiert.
+    // Prüfen, ob das Verzeichnis existiert.
     if (!fs::exists(directory) ||
         !fs::is_directory(directory))
     {
 
-      std::cerr << "Fehler: Ungueltiges Verzeichnis: "
+      std::cerr << "Fehler: Ungültiges Verzeichnis: "
                 << searchPath << "\n";
 
       return false;

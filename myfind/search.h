@@ -6,10 +6,10 @@
 
 // Durchsucht ein Verzeichnis nach einem bestimmten Dateinamen.
 // recursive: Unterverzeichnisse ebenfalls durchsuchen.
-// ignoreCase: Gross-/Kleinschreibung ignorieren.
+// ignoreCase: Groß-/Kleinschreibung ignorieren.
 // outputLock: Synchronisiert die Ausgabe zwischen Kindprozessen.
 //
-// Rueckgabe: true bei erfolgreicher Suche, false bei Fehlern.
+// Rückgabe: true bei erfolgreicher Suche, false bei Fehlern.
 bool searchFiles(const std::string &searchPath,
                  const std::string &filename,
                  bool recursive,
